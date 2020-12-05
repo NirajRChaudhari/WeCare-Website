@@ -25,5 +25,5 @@ router.get("/coaches/:coachID", controller.get_coaches_coachID);
 router.get("/users/booking/:userID", controller.get_users_booking_userID);
 router.get("/users/:userID", controller.get_users_userID);
 
-router.get("/", controller.default_invalid_path);
+router.use("*", controller.default_invalid_path);
 module.exports = router;

@@ -9,68 +9,85 @@ mongoose
   })
   .then(() => console.log("Database is connected..."));
 
-const users_schema = new mongoose.Schema({
-  UserId: {
-    type: String,
-    unique: true,
+const users_schema = new mongoose.Schema(
+  {
+    UserId: {
+      type: String,
+      unique: true,
+    },
+    Name: {
+      type: String,
+    },
+    Password: {
+      type: String,
+    },
+    Gender: {
+      type: String,
+    },
+    DateOfBirth: {
+      type: Date,
+    },
+    Email: {
+      type: String,
+      unique: true,
+    },
+    MobileNumber: {
+      type: String,
+    },
+    Pincode: {
+      type: Number,
+    },
+    City: {
+      type: String,
+    },
+    State: {
+      type: String,
+    },
+    Country: {
+      type: String,
+    },
   },
-  Name: {
-    type: String,
-  },
-  Password: {
-    type: String,
-  },
-  Gender: {
-    type: String,
-  },
-  DateOfBirth: {
-    type: Date,
-  },
-  Email: {
-    type: String,
-    unique: true,
-  },
-  MobileNumber: {
-    type: String,
-  },
-  Pincode: {
-    type: Number,
-  },
-  City: {
-    type: String,
-  },
-  State: {
-    type: String,
-  },
-  Country: {
-    type: String,
-  },
-});
+  {
+    timestamps: {
+      createdAt: true,
+      updatedAt: true,
+    },
+  }
+);
 const users = mongoose.model("users", users_schema);
 
-const coaches_schema = new mongoose.Schema({
-  CoachId: {
-    type: String,
+const coaches_schema = new mongoose.Schema(
+  {
+    CoachId: {
+      type: String,
+    },
+    Name: {
+      type: String,
+      unique: true,
+    },
+    Password: {
+      type: String,
+    },
+    Gender: {
+      type: String,
+    },
+    DateOfBirth: {
+      type: Date,
+    },
+    MobileNumber: {
+      type: Number,
+    },
+    Speciality: {
+      type: String,
+    },
   },
-  Name: {
-    type: String,
-  },
-  Password: {
-    type: String,
-  },
-  Gender: {
-    type: String,
-  },
-  DateOfBirth: {
-    type: Date,
-  },
-  MobileNumber: {
-    type: Number,
-  },
-  Speciality: {
-    type: String,
-  },
-});
+  {
+    timestamps: {
+      createdAt: true,
+      updatedAt: true,
+    },
+  }
+);
 const coaches = mongoose.model("coaches", coaches_schema);
 
 const bookings_schema = new mongoose.Schema({

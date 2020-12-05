@@ -1,3 +1,4 @@
+const { response } = require("express");
 let { users, coaches, bookings } = require("../Model/schema");
 
 let send_msg = async (res, status, message) => {
@@ -5,6 +6,7 @@ let send_msg = async (res, status, message) => {
     message: message,
   });
 };
+
 //      POST Methods
 exports.post_users_login = async (req, res) => {
   let id = req.body.id;
@@ -154,9 +156,9 @@ exports.post_users = async (req, res) => {
         Country: country,
       };
 
-      let usr = await users.create(obj, function (err, result) {
+      await users.create(obj, function (err, result) {
         if (err) {
-          send_msg(res, 400, "Creation of Record Failed");
+          send_msg(res, 400, "Creation of User Record Failed");
         } else {
           send_msg(res, 201, id);
         }
@@ -166,7 +168,15 @@ exports.post_users = async (req, res) => {
 };
 
 exports.post_coaches_login = async (req, res) => {
-  res.send("<h1>Post Coaches Login</h1>");
+  let id = req.body.id;
+  let password = req.body.password;
+
+  let coach_exists = await coaches.findOne({ CoachId: id, Password: password });
+  if (coach_exists == null) {
+    send_msg(res, 400, "Incorrect coach id or password");
+  } else {
+    res.status(200).send(true);
+  }
 };
 
 exports.post_coaches = async (req, res) => {
@@ -205,7 +215,8 @@ exports.post_coaches = async (req, res) => {
           return false;
         } else {
           //Validate MobileNumber
-          if (mobileNumber != undefined && mobileNumber.length != 10) {
+          // For coaches mobileNumber is Number format not String unlike users so convert it to String to find length
+          if (mobileNumber != undefined && String(mobileNumber).length != 10) {
             send_msg(res, 400, "Mobile Number should have 10 digits");
             return false;
           } else {
@@ -223,6 +234,37 @@ exports.post_coaches = async (req, res) => {
         } //else Gender
       } //else Password
     } //else Name
+  }
+
+  //Do Validation
+  if (validate()) {
+    //Check if email already exists
+    let name_exists = await coaches.findOne({ Name: name });
+    if (name_exists != null) {
+      send_msg(res, 400, "Coach exists with this name");
+    } else {
+      //Assign new User's ID
+      const count = await coaches.countDocuments();
+      let id = "CI-" + String(count + 1).padStart(4, "0");
+
+      let obj = {
+        CoachId: id,
+        Name: name,
+        Password: password,
+        DateOfBirth: dateOfBirth,
+        Gender: gender,
+        MobileNumber: mobileNumber,
+        Speciality: speciality,
+      };
+
+      await coaches.create(obj, function (err, result) {
+        if (err) {
+          send_msg(res, 400, "Creation of Coach Record Failed");
+        } else {
+          send_msg(res, 201, id);
+        }
+      });
+    }
   }
 };
 
@@ -242,7 +284,8 @@ exports.delete_booking_bookingID = async (req, res) => {
 
 //      GET Methods
 exports.get_coaches_all = async (req, res) => {
-  res.send("<h1>Get coaches all</h1>");
+  let all_coaches = await coaches.find({});
+  res.status(200).send(all_coaches);
 };
 
 exports.get_coaches_booking_coachID = async (req, res) => {
@@ -250,7 +293,14 @@ exports.get_coaches_booking_coachID = async (req, res) => {
 };
 
 exports.get_coaches_coachID = async (req, res) => {
-  res.send("<h1>Get coaches coachID</h1>");
+  let coachID = req.params.coachID;
+  let coach = await coaches.findOne({ CoachId: coachID });
+
+  if (coach == null) {
+    send_msg(res, 400, "Coach Id does not exist");
+  } else {
+    res.status(201).send(coach);
+  }
 };
 
 exports.get_users_booking_userID = async (req, res) => {
@@ -258,9 +308,16 @@ exports.get_users_booking_userID = async (req, res) => {
 };
 
 exports.get_users_userID = async (req, res) => {
-  res.send("<h1>Get users userID</h1>");
+  let userID = req.params.userID;
+  let user = await users.findOne({ UserId: userID });
+
+  if (user == null) {
+    send_msg(res, 400, "User Id does not exist");
+  } else {
+    res.status(200).send(user);
+  }
 };
 
 exports.default_invalid_path = async (req, res) => {
-  res.send("<h1>Welcome to WeCare's Website</h1>");
+  send_msg(res, 404, "Invalid path");
 };
