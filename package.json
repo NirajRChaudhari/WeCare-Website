@@ -1,0 +1,15 @@
+{
+  "name": "wecare",
+  "version": "1.0.0",
+  "description": "WeCare is an online Life Coaching application that helps its users to sign up and log in to seek the guidance of famous Life Coaches. Users can search for a Life Coach based on specialty and can book an appointment within 7 days. They can also see upcoming appointments and can reschedule or cancel the appointments. Similarly, Life Coaches can also sign up and login and can see their upcoming schedule. ",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Niraj Ramakant Chaudhari",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.11.3"
+  }
+}
