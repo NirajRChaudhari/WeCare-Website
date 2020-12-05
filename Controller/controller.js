@@ -24,7 +24,6 @@ exports.post_users = async (req, res) => {
   let name = req.body.name;
   let password = req.body.password;
   let dateOfBirth = req.body.dateOfBirth;
-  let age = req.body.age;
   let gender = req.body.gender;
   let mobileNumber = req.body.mobileNumber;
   let email = req.body.email;
@@ -33,6 +32,15 @@ exports.post_users = async (req, res) => {
   let state = req.body.state;
   let country = req.body.country;
 
+  //Just Check if valid date
+  let temp = Date.parse(dateOfBirth);
+  if (isNaN(temp)) {
+    send_msg(res, 400, "Date should be any upcoming 7 days");
+    return;
+  }
+  let age = (new Date() - new Date(dateOfBirth)) / (1000 * 3600 * 24 * 365.5);
+
+  //Validate all values
   function validate() {
     //Validate Name
     if (name.length < 3 || name.length > 50) {
@@ -66,7 +74,10 @@ exports.post_users = async (req, res) => {
             return false;
           } else {
             //Validate MobileNumber
-            if (mobileNumber != undefined && mobileNumber.length != 10) {
+            if (
+              mobileNumber != undefined &&
+              String(mobileNumber).length != 10
+            ) {
               send_msg(res, 400, "Mobile Number should have 10 digits");
               return false;
             } else {
@@ -77,7 +88,7 @@ exports.post_users = async (req, res) => {
                 return false;
               } else {
                 //Validate Pincode
-                if (pincode != undefined && pincode.length != 6) {
+                if (pincode != undefined && String(pincode).length != 6) {
                   send_msg(res, 400, "Pincode should have 6 digits");
                   return false;
                 } else {
@@ -187,6 +198,15 @@ exports.post_coaches = async (req, res) => {
   let mobileNumber = req.body.mobileNumber;
   let speciality = req.body.speciality;
 
+  //Just Check if valid date
+  let temp = Date.parse(dateOfBirth);
+  if (isNaN(temp)) {
+    send_msg(res, 400, "Date should be any upcoming 7 days");
+    return;
+  }
+  let age = (new Date() - new Date(dateOfBirth)) / (1000 * 3600 * 24 * 365.5);
+
+  //Validate all values
   function validate() {
     //Validate Name
     if (name.length < 3 || name.length > 50) {
@@ -209,29 +229,38 @@ exports.post_coaches = async (req, res) => {
         );
         return false;
       } else {
-        //Validate Gender
-        if (gender != undefined && gender != "F" && gender != "M") {
-          send_msg(res, 400, "Gender should be either M or F");
+        //Validate Age
+        if (age != undefined && (age < 20 || age > 100)) {
+          send_msg(res, 400, "Age should be greater than 20 and less than 100");
           return false;
         } else {
-          //Validate MobileNumber
-          // For coaches mobileNumber is Number format not String unlike users so convert it to String to find length
-          if (mobileNumber != undefined && String(mobileNumber).length != 10) {
-            send_msg(res, 400, "Mobile Number should have 10 digits");
+          //Validate Gender
+          if (gender != undefined && gender != "F" && gender != "M") {
+            send_msg(res, 400, "Gender should be either M or F");
             return false;
           } else {
-            //Validate Speciality
+            //Validate MobileNumber
+            // For coaches mobileNumber is Number format not String unlike users so convert it to String to find length
             if (
-              speciality != undefined &&
-              (speciality.length < 10 || speciality.length > 50)
+              mobileNumber != undefined &&
+              String(mobileNumber).length != 10
             ) {
-              send_msg(res, 400, "Specialty should have 10 to 50 characters");
+              send_msg(res, 400, "Mobile Number should have 10 digits");
               return false;
             } else {
-              return true;
-            } //else Speciality
-          } //else MobileNumber
-        } //else Gender
+              //Validate Speciality
+              if (
+                speciality != undefined &&
+                (speciality.length < 10 || speciality.length > 50)
+              ) {
+                send_msg(res, 400, "Specialty should have 10 to 50 characters");
+                return false;
+              } else {
+                return true;
+              } //else Speciality
+            } //else MobileNumber
+          } //else Gender
+        } //else Age/ DateOfBirth
       } //else Password
     } //else Name
   }
@@ -269,17 +298,149 @@ exports.post_coaches = async (req, res) => {
 };
 
 exports.post_users_booking_userID_coachID = async (req, res) => {
-  res.send("<h1>Post users booking userID coachID</h1>");
+  let userID = req.params.userID;
+  let coachID = req.params.coachID;
+
+  let slot = req.body.Slot;
+  let dateOfAppointment = req.body.DateOfAppointment;
+  //Just Check if valid date
+  let temp = Date.parse(dateOfAppointment);
+  if (isNaN(temp)) {
+    send_msg(res, 400, "Date should be any upcoming 7 days");
+    return;
+  }
+
+  //Check if UserId exists
+  let user_exists = await users.findOne({ UserId: userID });
+  if (user_exists == null) {
+    send_msg(res, 400, "User Id does not exist");
+    return;
+  } else {
+    //Check if CoachId exists
+    let coach_exists = await coaches.findOne({ CoachId: coachID });
+
+    if (coach_exists == null) {
+      send_msg(res, 400, "Coach Id does not exist");
+      return;
+    } else {
+      //Check if slot is valid
+      let slot_pattern = /[0-1]?[0-9]+\s(AM|PM)\sto\s[0-1]?[0-9]+\s(AM|PM)/;
+      if (slot != undefined && !slot.match(slot_pattern)) {
+        send_msg(res, 400, "Slot should be a valid one");
+        return;
+      } else {
+        //Check if Date is in upcoming 7 days
+        let today_date = new Date();
+        let date_difference =
+          (new Date(dateOfAppointment) - today_date) / (1000 * 3600 * 24);
+        //if Date is not in next 7 days
+        if (date_difference < 0 || date_difference > 7) {
+          send_msg(res, 400, "Date should be any upcoming 7 days");
+          return;
+        } else {
+          //Check if appointment on same day and time
+          let already_appointment = await bookings.findOne({
+            Slot: slot,
+            AppointmentDate: dateOfAppointment,
+          });
+          if (already_appointment != null) {
+            send_msg(res, 400, "There is an appointment in this slot already");
+            return;
+          } else {
+            //Insert appointment in booking database
+            const count = await bookings.countDocuments();
+            let id = "B-" + String(count + 1).padStart(4, "0");
+            let obj = {
+              BookingId: id,
+              UserId: userID,
+              CoachId: coachID,
+              AppointmentDate: dateOfAppointment,
+              Slot: slot,
+            };
+
+            await bookings.create(obj, function (err, result) {
+              if (err) {
+                send_msg(res, 400, "Creation of Bookings Record Failed");
+              } else {
+                res.status(200).send(true);
+              }
+            });
+          }
+        } //else date valid (in upcoming 7 days)
+      } //else slot valid
+    } //else coach_exists
+  } //else user_exists
 };
 
 //      PUT Methods
 exports.put_booking_bookingID = async (req, res) => {
-  res.send("<h1>Put booking bookingID</h1>");
+  let bookingId = req.params.bookingID;
+
+  //Check if booking id is correct
+  let booking = await bookings.findOne({ BookingId: bookingId });
+  if (booking == null) {
+    send_msg(res, 400, "Booking Id does not exist");
+    return;
+  }
+
+  //Validate Slot and Date
+  let slot = req.body.Slot;
+  let dateOfAppointment = req.body.DateOfAppointment;
+  //Just Check if valid date
+  let temp = Date.parse(dateOfAppointment);
+  if (isNaN(temp)) {
+    send_msg(res, 400, "Date should be any upcoming 7 days");
+    return;
+  }
+
+  //Check if slot is valid
+  let slot_pattern = /[0-1]?[0-9]+\s(AM|PM)\sto\s[0-1]?[0-9]+\s(AM|PM)/;
+  if (slot != undefined && !slot.match(slot_pattern)) {
+    send_msg(res, 400, "Slot should be a valid one");
+    return;
+  } else {
+    //Check if Date is in upcoming 7 days
+    let today_date = new Date();
+    let date_difference =
+      (new Date(dateOfAppointment) - today_date) / (1000 * 3600 * 24);
+    //if Date is not in next 7 days
+    if (date_difference < 0 || date_difference > 7) {
+      send_msg(res, 400, "Date should be any upcoming 7 days");
+      return;
+    } else {
+      //Check if any appointment on same day and time
+      let already_appointment = await bookings.findOne({
+        Slot: slot,
+        AppointmentDate: dateOfAppointment,
+      });
+      if (already_appointment != null) {
+        send_msg(res, 400, "There is an appointment in this slot already");
+        return;
+      } else {
+        //Update Record
+        let obj = {
+          Slot: slot,
+          AppointmentDate: dateOfAppointment,
+        };
+        await bookings.findOneAndUpdate({ BookingId: bookingId }, obj);
+        res.status(200).send(true);
+      }
+    } //else date valid (in upcoming 7 days)
+  } //else slot valid
 };
 
 //      DELETE Methods
 exports.delete_booking_bookingID = async (req, res) => {
-  res.send("<h1>Delete booking bookingID</h1>");
+  let bookingId = req.params.bookingID;
+
+  //Check if booking id is correct
+  let booking = await bookings.findOne({ BookingId: bookingId });
+  if (booking == null) {
+    send_msg(res, 400, "Could not delete this appointment");
+  } else {
+    await bookings.deleteOne({ BookingId: bookingId });
+    res.status(200).send(true);
+  }
 };
 
 //      GET Methods
@@ -289,7 +450,15 @@ exports.get_coaches_all = async (req, res) => {
 };
 
 exports.get_coaches_booking_coachID = async (req, res) => {
-  res.send("<h1>Get coaches booking coachID</h1>");
+  let coachID = req.params.coachID;
+  let coach_bookings = await bookings.find({ CoachId: coachID });
+
+  //find used insted of findOne so check length instead of checking null value
+  if (coach_bookings.length == 0) {
+    send_msg(res, 400, "Could not find any bookings");
+  } else {
+    res.status(201).send(coach_bookings);
+  }
 };
 
 exports.get_coaches_coachID = async (req, res) => {
@@ -304,7 +473,14 @@ exports.get_coaches_coachID = async (req, res) => {
 };
 
 exports.get_users_booking_userID = async (req, res) => {
-  res.send("<h1>Get users booking userID</h1>");
+  let userID = req.params.userID;
+  let user_bookings = await bookings.find({ UserId: userID });
+
+  if (user_bookings.length == 0) {
+    send_msg(res, 400, "Could not find any appointment details");
+  } else {
+    res.status(200).send(user_bookings);
+  }
 };
 
 exports.get_users_userID = async (req, res) => {

@@ -32,7 +32,7 @@ const users_schema = new mongoose.Schema(
       unique: true,
     },
     MobileNumber: {
-      type: String,
+      type: Number,
     },
     Pincode: {
       type: Number,
@@ -90,29 +90,31 @@ const coaches_schema = new mongoose.Schema(
 );
 const coaches = mongoose.model("coaches", coaches_schema);
 
-const bookings_schema = new mongoose.Schema({
-  BookingId: {
-    type: String,
+const bookings_schema = new mongoose.Schema(
+  {
+    BookingId: {
+      type: String,
+    },
+    UserId: {
+      type: String,
+    },
+    CoachId: {
+      type: String,
+    },
+    AppointmentDate: {
+      type: Date,
+    },
+    Slot: {
+      type: String,
+    },
   },
-  UserId: {
-    type: String,
-  },
-  CoachId: {
-    type: String,
-  },
-  AppointmentDate: {
-    type: Date,
-  },
-  Slot: {
-    type: String,
-  },
-});
+  {
+    timestamps: {
+      createdAt: true,
+      updatedAt: true,
+    },
+  }
+);
 const bookings = mongoose.model("bookings", bookings_schema);
 
 module.exports = { users, coaches, bookings };
-
-// let temp = async () => {
-//   console.log();
-// };
-
-// temp();
